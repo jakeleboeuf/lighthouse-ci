@@ -30,13 +30,18 @@ if (process.env.API_KEY) {
 
 function printUsageAndExit() {
   const usage = `Usage:
-runLighthouse.js [--score=<score>] [--no-comment] [--runner=${Object.keys(RUNNERS)}] <url>
+runLighthouse.js [--score=<score>] [--no-comment] [--pr=<boolean>] [--runner=${Object.keys(
+    RUNNERS
+  )}] <url>
 
 Options:
   --score      Minimum score for the pull request to be considered "passing".
                If omitted, merging the PR will be allowed no matter what the score. [Number]
 
   --no-comment Doesn't post a comment to the PR issue summarizing the Lighthouse results. [Boolean]
+
+  --pr         By default Lighthouse will only run on PR's. To enable Lighthouse on all event
+               types set to false to run Lighthouse on all activity [Boolean]
 
   --runner     Selects Lighthouse running on Chrome or WebPageTest. [--runner=${Object.keys(
     RUNNERS
@@ -48,6 +53,9 @@ Examples:
 
   Runs Lighthouse and posts a summary of the results.
     runLighthouse.js https://example.com
+
+  Runs Lighthouse and posts a summary of the results on every test run.
+    runLighthouse.js --pr=false https://example.com
 
   Fails the PR if the score drops below 93. Posts the summary comment.
     runLighthouse.js --score=93 https://example.com
@@ -66,8 +74,8 @@ Examples:
 function getConfig() {
   const args = process.argv.slice(2);
   const argv = minimist(args, {
-    boolean: ['comment', 'help'],
-    default: {comment: true},
+    boolean: ['comment', 'help', 'pr'],
+    default: {comment: true, pr: true},
     alias: {help: 'h'}
   });
   const config = {};
@@ -100,15 +108,7 @@ function getConfig() {
   config.pr = {
     number:
       parseInt(process.env.TRAVIS_PULL_REQUEST, 10) || parseInt(process.env.CIRCLE_PR_NUMBER, 10),
-    sha: process.env.TRAVIS_PULL_REQUEST_SHA || process.env.CIRCLE_SHA1,
-    travis: {
-      number: parseInt(process.env.TRAVIS_PULL_REQUEST, 10),
-      sha: process.env.TRAVIS_PULL_REQUEST_SHA
-    },
-    circle: {
-      number: parseInt(process.env.CIRCLE_PR_NUMBER, 10),
-      sha: process.env.CIRCLE_SHA1
-    }
+    sha: process.env.TRAVIS_PULL_REQUEST_SHA || process.env.CIRCLE_SHA1
   };
 
   const repoSlug = process.env.TRAVIS_PULL_REQUEST_SLUG || process.env.CIRCLE_PULL_REQUEST;
@@ -161,8 +161,16 @@ function run(config) {
 
 // Run LH if this is a PR.
 const config = getConfig();
-if (process.env.TRAVIS_EVENT_TYPE === 'pull_request' || process.env.CIRCLE_PULL_REQUEST) {
-  run(config);
+
+// If --pr is true (default)
+if (argv.pr) {
+  if (process.env.TRAVIS_EVENT_TYPE === 'pull_request' || process.env.CIRCLE_PULL_REQUEST) {
+    run(config);
+  } else {
+    console.log('Lighthouse is not run for non-PR commits.');
+  }
+
+  // If --pr=false
 } else {
-  console.log('Lighthouse is not run for non-PR commits.');
+  run(config);
 }
