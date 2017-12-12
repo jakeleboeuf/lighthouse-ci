@@ -20,7 +20,7 @@ const minimist = require('minimist');
 
 const CI_HOST = process.env.CI_HOST || 'https://lighthouse-ci.appspot.com';
 const API_KEY = process.env.LIGHTHOUSE_API_KEY || process.env.API_KEY;
-const RUNNERS = { chrome: 'chrome', wpt: 'wpt' };
+const RUNNERS = {chrome: 'chrome', wpt: 'wpt'};
 
 if (process.env.API_KEY) {
   console.log(
@@ -30,9 +30,7 @@ if (process.env.API_KEY) {
 
 function printUsageAndExit() {
   const usage = `Usage:
-runLighthouse.js [--score=<score>] [--no-comment] [--runner=${Object.keys(
-    RUNNERS
-  )}] <url>
+runLighthouse.js [--score=<score>] [--no-comment] [--runner=${Object.keys(RUNNERS)}] <url>
 
 Options:
   --score      Minimum score for the pull request to be considered "passing".
@@ -69,8 +67,8 @@ function getConfig() {
   const args = process.argv.slice(2);
   const argv = minimist(args, {
     boolean: ['comment', 'help'],
-    default: { comment: true },
-    alias: { help: 'h' }
+    default: {comment: true},
+    alias: {help: 'h'}
   });
   const config = {};
 
@@ -94,16 +92,15 @@ function getConfig() {
   config.runner = argv.runner || RUNNERS.chrome;
   const possibleRunners = Object.keys(RUNNERS);
   if (!possibleRunners.includes(config.runner)) {
-    console.log(
-      `Unknown runner "${config.runner}". Options: ${possibleRunners}`
-    );
+    console.log(`Unknown runner "${config.runner}". Options: ${possibleRunners}`);
     printUsageAndExit();
   }
   console.log(`Using runner: ${config.runner}`);
 
   config.pr = {
-    number: parseInt(process.env.TRAVIS_PULL_REQUEST, 10),
-    sha: process.env.TRAVIS_PULL_REQUEST_SHA,
+    number:
+      parseInt(process.env.TRAVIS_PULL_REQUEST, 10) || parseInt(process.env.CIRCLE_PR_NUMBER, 10),
+    sha: process.env.TRAVIS_PULL_REQUEST_SHA || process.env.CIRCLE_SHA1,
     travis: {
       number: parseInt(process.env.TRAVIS_PULL_REQUEST, 10),
       sha: process.env.TRAVIS_PULL_REQUEST_SHA
@@ -114,8 +111,7 @@ function getConfig() {
     }
   };
 
-  const repoSlug =
-    process.env.TRAVIS_PULL_REQUEST_SLUG || process.env.CIRCLE_PULL_REQUEST;
+  const repoSlug = process.env.TRAVIS_PULL_REQUEST_SLUG || process.env.CIRCLE_PULL_REQUEST;
   config.repo = {
     owner: repoSlug.split('/')[0],
     name: repoSlug.split('/')[1]
@@ -138,7 +134,7 @@ function run(config) {
     case RUNNERS.chrome: // same as default
     default:
       endpoint = `${CI_HOST}/run_on_chrome`;
-      body = JSON.stringify(Object.assign({ format: 'json' }, config));
+      body = JSON.stringify(Object.assign({format: 'json'}, config));
   }
 
   fetch(endpoint, {
@@ -152,9 +148,7 @@ function run(config) {
     .then(resp => resp.json())
     .then(json => {
       if (config.runner === RUNNERS.wpt) {
-        console.log(
-          `Started Lighthouse run on WebPageTest: ${json.data.target_url}`
-        );
+        console.log(`Started Lighthouse run on WebPageTest: ${json.data.target_url}`);
         return;
       }
       console.log('Lighthouse CI score:', json.score);
