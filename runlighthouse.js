@@ -96,6 +96,8 @@ function getConfig() {
     (argv.pr &&
       (process.env.TRAVIS_EVENT_TYPE === 'pull_request' || process.env.CIRCLE_PULL_REQUEST));
 
+  console.log('JAKE', argv.pr, process.env.CIRCLE_PULL_REQUEST);
+
   config.addComment = argv.comment;
   config.minPassScore = Number(argv.score);
   if (!config.addComment && !config.minPassScore) {
