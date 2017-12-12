@@ -145,6 +145,8 @@ function getConfig() {
     name: repoSlug ? repoSlug.split('/')[1] : process.env.CIRCLE_PROJECT_REPONAME
   };
 
+  console.log(config.repo.owner, config.repo.name);
+
   return config;
 }
 
