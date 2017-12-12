@@ -113,8 +113,8 @@ function getConfig() {
 
   const repoSlug = process.env.TRAVIS_PULL_REQUEST_SLUG || process.env.CIRCLE_PULL_REQUEST;
   config.repo = {
-    owner: repoSlug.split('/')[0],
-    name: repoSlug.split('/')[1]
+    owner: repoSlug ? repoSlug.split('/')[0] : null,
+    name: repoSlug ? repoSlug.split('/')[1] : null
   };
 
   return config;
