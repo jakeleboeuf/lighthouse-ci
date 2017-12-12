@@ -138,11 +138,18 @@ function getConfig() {
 
   config.pr = getPrInfo();
 
-  const repoSlug = process.env.TRAVIS_PULL_REQUEST_SLUG || process.env.CIRCLE_PULL_REQUEST;
+  const repoSlug =
+    process.env.TRAVIS_PULL_REQUEST_SLUG ||
+    process.env.CIRCLE_PULL_REQUEST ||
+    process.env.CIRCLE_REPOSITORY_URL;
+
   config.repo = {
     owner: repoSlug ? repoSlug.split('/')[0] : null,
     name: repoSlug ? repoSlug.split('/')[1] : null
   };
+
+  console.log('ENV:', process.env.CIRCLE_PROJECT_USERNAME, process.env.CIRCLE_PROJECT_REPONAME);
+  console.log('Slug:', config.repo.owner, config.repo.name);
 
   return config;
 }
