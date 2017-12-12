@@ -68,6 +68,31 @@ Examples:
 }
 
 /**
+ * Setup pr info dependent upon CI provider.
+ * @return {!Object} PR object.
+ */
+function getPrInfo() {
+  const pr = {
+    number: null,
+    sha: null
+  };
+
+  // Setup for Travis
+  if (process.env.TRAVIS) {
+    pr.number = parseInt(process.env.TRAVIS_PULL_REQUEST, 10);
+    pr.sha = process.env.TRAVIS_PULL_REQUEST_SHA;
+  }
+
+  // Setup for Circle CI
+  if (process.env.CIRCLECI) {
+    pr.number = parseInt(process.env.CIRCLE_PR_NUMBER, 10);
+    pr.sha = process.env.CIRCLE_SHA1;
+  }
+
+  return pr;
+}
+
+/**
  * Collects command lines flags and creates settings to run LH CI.
  * @return {!Object} Settings object.
  */
@@ -96,8 +121,6 @@ function getConfig() {
     (argv.pr &&
       (process.env.TRAVIS_EVENT_TYPE === 'pull_request' || process.env.CIRCLE_PULL_REQUEST));
 
-  console.log('JAKE', argv.pr, process.env.CIRCLE_PULL_REQUEST, process.env.CIRCLE_SHA1);
-
   config.addComment = argv.comment;
   config.minPassScore = Number(argv.score);
   if (!config.addComment && !config.minPassScore) {
@@ -113,11 +136,7 @@ function getConfig() {
   }
   console.log(`Using runner: ${config.runner}`);
 
-  config.pr = {
-    number:
-      parseInt(process.env.TRAVIS_PULL_REQUEST, 10) || parseInt(process.env.CIRCLE_PR_NUMBER, 10),
-    sha: process.env.TRAVIS_PULL_REQUEST_SHA || process.env.CIRCLE_SHA1
-  };
+  config.pr = getPrInfo();
 
   const repoSlug = process.env.TRAVIS_PULL_REQUEST_SLUG || process.env.CIRCLE_PULL_REQUEST;
   config.repo = {
