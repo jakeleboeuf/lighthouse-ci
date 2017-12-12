@@ -161,7 +161,7 @@ function run(config) {
 
 // Run LH if this is a PR.
 const config = getConfig();
-if (process.env.TRAVIS_EVENT_TYPE === 'pull_request' || CIRCLE_PULL_REQUEST) {
+if (process.env.TRAVIS_EVENT_TYPE === 'pull_request' || process.env.CIRCLE_PULL_REQUEST) {
   run(config);
 } else {
   console.log('Lighthouse is not run for non-PR commits.');
