@@ -20,15 +20,19 @@ const minimist = require('minimist');
 
 const CI_HOST = process.env.CI_HOST || 'https://lighthouse-ci.appspot.com';
 const API_KEY = process.env.LIGHTHOUSE_API_KEY || process.env.API_KEY;
-const RUNNERS = {chrome: 'chrome', wpt: 'wpt'};
+const RUNNERS = { chrome: 'chrome', wpt: 'wpt' };
 
 if (process.env.API_KEY) {
-  console.log('Warning: The environment variable API_KEY is deprecated. Please use LIGHTHOUSE_API_KEY instead.');
+  console.log(
+    'Warning: The environment variable API_KEY is deprecated. Please use LIGHTHOUSE_API_KEY instead.'
+  );
 }
 
 function printUsageAndExit() {
   const usage = `Usage:
-runLighthouse.js [--score=<score>] [--no-comment] [--runner=${Object.keys(RUNNERS)}] <url>
+runLighthouse.js [--score=<score>] [--no-comment] [--runner=${Object.keys(
+    RUNNERS
+  )}] <url>
 
 Options:
   --score      Minimum score for the pull request to be considered "passing".
@@ -36,7 +40,9 @@ Options:
 
   --no-comment Doesn't post a comment to the PR issue summarizing the Lighthouse results. [Boolean]
 
-  --runner     Selects Lighthouse running on Chrome or WebPageTest. [--runner=${Object.keys(RUNNERS)}]
+  --runner     Selects Lighthouse running on Chrome or WebPageTest. [--runner=${Object.keys(
+    RUNNERS
+  )}]
 
   --help       Prints help.
 
@@ -63,8 +69,8 @@ function getConfig() {
   const args = process.argv.slice(2);
   const argv = minimist(args, {
     boolean: ['comment', 'help'],
-    default: {comment: true},
-    alias: {help: 'h'}
+    default: { comment: true },
+    alias: { help: 'h' }
   });
   const config = {};
 
@@ -89,17 +95,27 @@ function getConfig() {
   const possibleRunners = Object.keys(RUNNERS);
   if (!possibleRunners.includes(config.runner)) {
     console.log(
-        `Unknown runner "${config.runner}". Options: ${possibleRunners}`);
+      `Unknown runner "${config.runner}". Options: ${possibleRunners}`
+    );
     printUsageAndExit();
   }
   console.log(`Using runner: ${config.runner}`);
 
   config.pr = {
     number: parseInt(process.env.TRAVIS_PULL_REQUEST, 10),
-    sha: process.env.TRAVIS_PULL_REQUEST_SHA
+    sha: process.env.TRAVIS_PULL_REQUEST_SHA,
+    travis: {
+      number: parseInt(process.env.TRAVIS_PULL_REQUEST, 10),
+      sha: process.env.TRAVIS_PULL_REQUEST_SHA
+    },
+    circle: {
+      number: parseInt(process.env.CIRCLE_PR_NUMBER, 10),
+      sha: process.env.CIRCLE_SHA1
+    }
   };
 
-  const repoSlug = process.env.TRAVIS_PULL_REQUEST_SLUG;
+  const repoSlug =
+    process.env.TRAVIS_PULL_REQUEST_SLUG || process.env.CIRCLE_PULL_REQUEST;
   config.repo = {
     owner: repoSlug.split('/')[0],
     name: repoSlug.split('/')[1]
@@ -122,31 +138,36 @@ function run(config) {
     case RUNNERS.chrome: // same as default
     default:
       endpoint = `${CI_HOST}/run_on_chrome`;
-      body = JSON.stringify(Object.assign({format: 'json'}, config));
+      body = JSON.stringify(Object.assign({ format: 'json' }, config));
   }
 
-  fetch(endpoint, {method: 'POST', body, headers: {
-    'Content-Type': 'application/json',
-    'X-API-KEY': API_KEY
-  }})
-  .then(resp => resp.json())
-  .then(json => {
-    if (config.runner === RUNNERS.wpt) {
-      console.log(
-          `Started Lighthouse run on WebPageTest: ${json.data.target_url}`);
-      return;
+  fetch(endpoint, {
+    method: 'POST',
+    body,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-API-KEY': API_KEY
     }
-    console.log('Lighthouse CI score:', json.score);
   })
-  .catch(err => {
-    console.log('Lighthouse CI failed', err);
-    process.exit(1);
-  });
+    .then(resp => resp.json())
+    .then(json => {
+      if (config.runner === RUNNERS.wpt) {
+        console.log(
+          `Started Lighthouse run on WebPageTest: ${json.data.target_url}`
+        );
+        return;
+      }
+      console.log('Lighthouse CI score:', json.score);
+    })
+    .catch(err => {
+      console.log('Lighthouse CI failed', err);
+      process.exit(1);
+    });
 }
 
 // Run LH if this is a PR.
 const config = getConfig();
-if (process.env.TRAVIS_EVENT_TYPE === 'pull_request') {
+if (process.env.TRAVIS_EVENT_TYPE === 'pull_request' || CIRCLE_PULL_REQUEST) {
   run(config);
 } else {
   console.log('Lighthouse is not run for non-PR commits.');

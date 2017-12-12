@@ -1,7 +1,8 @@
 {
   "name": "lighthouse-ci",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "author": "Eric Bidelman <ebidel@>",
+  "contributors": ["Jake LeBoeuf <jakeleboeuf@>"],
   "license": "Apache-2.0",
   "description": "Lighthouse CI Runner",
   "main": "runlighthouse.js",
