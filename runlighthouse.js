@@ -90,6 +90,12 @@ function getConfig() {
     printUsageAndExit();
   }
 
+  // If pr is false, or if pr is true (default) and event type is a pull request
+  config.runLighthouse =
+    !argv.pr ||
+    (argv.pr &&
+      (process.env.TRAVIS_EVENT_TYPE === 'pull_request' || process.env.CIRCLE_PULL_REQUEST));
+
   config.addComment = argv.comment;
   config.minPassScore = Number(argv.score);
   if (!config.addComment && !config.minPassScore) {
@@ -159,18 +165,13 @@ function run(config) {
     });
 }
 
-// Run LH if this is a PR.
+// Run LH if this is a PR, or --pr is false.
 const config = getConfig();
 
-// If --pr is true (default)
-if (argv.pr) {
-  if (process.env.TRAVIS_EVENT_TYPE === 'pull_request' || process.env.CIRCLE_PULL_REQUEST) {
-    run(config);
-  } else {
-    console.log('Lighthouse is not run for non-PR commits.');
-  }
-
-  // If --pr=false
-} else {
+if (config.runLighthouse) {
   run(config);
+} else {
+  console.log(
+    'Lighthouse is not run for non-PR commits by default. Run with --pr=false to enable for all builds.'
+  );
 }
