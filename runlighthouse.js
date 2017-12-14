@@ -180,7 +180,6 @@ function run(config) {
         return;
       }
       console.log('Lighthouse CI score:', json.score);
-      console.log('Lighthouse CI json:', json);
     })
     .catch(err => {
       console.log('Lighthouse CI failed', err);
